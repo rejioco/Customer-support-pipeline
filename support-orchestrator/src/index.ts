@@ -12,7 +12,7 @@ import { escalationNode } from "./nodes/escalation";
 
 const main = async () => {
     let state : SupportState = {
-        query:"something weird happened maybe i am not sure damn what is happeing lol",
+        query:"I am in India right now how much time does it take to send an order to USA?",
         currentNode:"start"
     }
     console.log("\nINITIAL STATE");

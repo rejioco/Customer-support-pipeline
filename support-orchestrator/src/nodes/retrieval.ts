@@ -1,20 +1,27 @@
 import { SupportState } from "../state";
-
-//No vector Databases yet
+import { generateEmbedding } from "../embed";
+import { qdrant } from "../qdrant";
 
 export const retrievalNode = async (
   state: SupportState,
 ): Promise<SupportState> => {
   console.log("\nRUNNING RETRIEVAL NODE");
-  const fakeDocs: Record<string, string[]> = {
-    billing: [
-      "Refunds take around 6-7 business days have some patience",
-      "Double charges are usually reversed automatically",
-    ],
-    shipping: ["Orders usually arrive within 3-5 days"],
-    technical: ["Restart your application before retrying"],
+  const queryEmbedding = await generateEmbedding(state.query);
+
+  // Make use of this query embeddings to perform search operation in the vector DB
+  const results = await qdrant.search("support-docs", {
+    vector: queryEmbedding,
+    limit: 3,
+  });
+
+  const retrievedDocs = results.map((result) => ({
+    score: result.score,
+    content: result.payload?.content,
+  }));
+
+  return {
+    ...state,
+    retrievedDocs,
+    currentNode: "retrieval",
   };
-  state.retrievedDocs = fakeDocs[state.intent || ""] || [];
-  state.currentNode = "retrieval";
-  return state;
 };

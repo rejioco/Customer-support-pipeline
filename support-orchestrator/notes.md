@@ -1,0 +1,3 @@
+- embed.ts : in this file we have function that generates embeddings
+- qdrant.ts : in this file we have qdrant client
+- setupQdrant.ta : in this file we have defined how will the structure of "support-collection" look like

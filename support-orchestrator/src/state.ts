@@ -3,7 +3,7 @@ export type SupportState = {
   intent?: string;
   sentiment?: string;
   confidence?: number;
-  retrievedDocs?: string[];
+  retrievedDocs?: { score: number; content: unknown; }[];
   currentNode?: string;
   finalResponse?:string;
   escalationNeeded?: boolean;
