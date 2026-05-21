@@ -14,6 +14,7 @@ export const retrievalNode = async (
     limit: 3,
   });
 
+
   const retrievedDocs = results.map((result) => ({
     score: result.score,
     content: result.payload?.content,

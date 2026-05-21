@@ -8,3 +8,12 @@ export const routerAfterEscalation = (state: SupportState): string => {
   // Retrieval
   return "retrieval";
 };
+
+export const routerAfterRetrieval = (state:SupportState): string => {
+  if(state.toolNeeded){
+    //tool node 
+    return "tool"
+  }
+  // Direct generation node
+  return "generation"
+}

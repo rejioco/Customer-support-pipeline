@@ -7,4 +7,8 @@ export type SupportState = {
   currentNode?: string;
   finalResponse?:string;
   escalationNeeded?: boolean;
+  toolNeeded?:boolean;
+  toolName?:string;
+  toolInput?:string
+  toolResponse?:any
 };
