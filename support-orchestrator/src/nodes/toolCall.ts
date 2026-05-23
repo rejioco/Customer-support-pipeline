@@ -59,7 +59,7 @@ export const toolCallNode = async (state: SupportState): Promise<SupportState> =
   const parsed: ToolDecision = JSON.parse(raw);
   const toolName = parsed.toolName;
   const toolInput = parsed.toolInput;
-  const toolResponse = await TOOL_MAP[toolName](toolInput.orderId);
+  const toolResponse = await TOOL_MAP[toolName](toolInput);
 
   return {...state,toolName,toolInput,toolResponse}
 };

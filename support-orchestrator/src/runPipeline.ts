@@ -10,11 +10,13 @@ import { escalationNode } from "./nodes/escalation";
 import { generationNode } from "./nodes/generation";
 import { toolDecisonNode } from "./nodes/toolDecide";
 import { toolCallNode } from "./nodes/toolCall";
+import { retrievalValidationNode } from "./nodes/retrievalValidator";
 
-const main = async () => {
+export const runPipeline = async (query: string): Promise<SupportState> => {
   let state: SupportState = {
-    query:"What is the order status of my order ORD4565",
+    query: query,
     currentNode: "start",
+    retryCount: 0,
   };
   console.log("\nINITIAL STATE");
   console.log(state);
@@ -28,8 +30,11 @@ const main = async () => {
 
   if (nextStep === "retrieval") {
     state = await retrievalNode(state);
+    state = await retrievalValidationNode(state);
+    if (!state.retrievalValid) {
+      return await escalationNode(state);
+    }
     state = await toolDecisonNode(state);
-    console.log("Ye dekh: ");
     console.log(state);
     if (routerAfterRetrieval(state) === "tool") {
       state = await toolCallNode(state);
@@ -41,7 +46,5 @@ const main = async () => {
   }
 
   console.log("\nFINAL STATE");
-  console.log(state);
+  return state;
 };
-
-main();
