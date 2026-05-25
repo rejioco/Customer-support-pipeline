@@ -16,4 +16,5 @@ export type SupportState = {
   retrievalValid?:boolean;
   retrievalConfidence?:number;
   reason?:string;
+  messages?:{role:"user"|"assistant",content:string}[]
 };

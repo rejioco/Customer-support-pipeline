@@ -12,11 +12,12 @@ import { toolDecisonNode } from "./nodes/toolDecide";
 import { toolCallNode } from "./nodes/toolCall";
 import { retrievalValidationNode } from "./nodes/retrievalValidator";
 
-export const runPipeline = async (query: string): Promise<SupportState> => {
+export const runPipeline = async (query: string,messages:any[]): Promise<SupportState> => {
   let state: SupportState = {
     query: query,
     currentNode: "start",
     retryCount: 0,
+    messages
   };
   console.log("\nINITIAL STATE");
   console.log(state);

@@ -7,22 +7,7 @@ import { getOrderStatus, getRefundStatus } from "../tools/orderTools";
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
 
-const SYSTEM_PROMPT = `You are a tool calling agent that calls the tool
-You have available tools like:
-- getOrderStatus(orderId) - Fetches real-time order tracking and delivery status. Required Input: orderId
-- getRefundStatus(refundId) - returns the status of refund
-
-- Based on user query decide which tool to call fro available tools and the tool Input that needs to be passed into the tool
-
-- Do not any explanation
-- Do not return Markdown
-- Return only valid JSON output
-
-- Return the output is this format only:
-{
-  "toolName":"Name of the tool",
-  "toolInput":"Inputs to be passed into tool"
-}
+const SYSTEM_PROMPT = `
 
 `;
 
@@ -38,16 +23,35 @@ type ToolDecision = {
   toolInput: string;
 };
 
-export const toolCallNode = async (state: SupportState): Promise<SupportState> => {
+export const toolCallNode = async (
+  state: SupportState,
+): Promise<SupportState> => {
   console.log("\nRUNNING TOOL EXECUTION NODE");
   const query = state.query;
   const intent = state.intent;
+  const CONVO_HISTORY = JSON.stringify(state.messages);
   const response = await ollama.chat({
     model: "llama3.1:latest",
     messages: [
       {
         role: "system",
-        content: SYSTEM_PROMPT,
+        content: `You are a tool calling agent that calls the tool
+You have available tools like:
+- getOrderStatus(orderId) - Fetches real-time order tracking and delivery status. Required Input: orderId
+- getRefundStatus(refundId) - returns the status of refund
+
+- This is conversational history and its very importany for you to first have a look in this : ${CONVO_HISTORY}
+- Based on user query decide which tool to call from available tools and the tool Input that needs to be passed into the tool
+
+- Do not any explanation
+- Do not return Markdown
+- Return only valid JSON output
+
+- Return the output is this format only:
+{
+  "toolName":"Name of the tool",
+  "toolInput":"Inputs to be passed into tool"
+}`,
       },
       {
         role: "user",
@@ -61,5 +65,5 @@ export const toolCallNode = async (state: SupportState): Promise<SupportState> =
   const toolInput = parsed.toolInput;
   const toolResponse = await TOOL_MAP[toolName](toolInput);
 
-  return {...state,toolName,toolInput,toolResponse}
+  return { ...state, toolName, toolInput, toolResponse };
 };

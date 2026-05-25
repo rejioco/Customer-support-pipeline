@@ -8,6 +8,7 @@ export const generationNode = async (
   state: SupportState,
 ): Promise<SupportState> => {
   console.log("GENERATION NODE IS RUNNING\n");
+  const CONVO_HISTORY = JSON.stringify(state.messages);
   const RETRIEVED_CONTEXT =
     state.retrievedDocs
       ?.map((doc) => {
@@ -31,6 +32,7 @@ export const generationNode = async (
   Use:
   - Retrieved Context for informational answers
   - Tool Results for real-time order/account information
+  - Conversation History lookup is very important to get previous context
 
   -------------------------
 
@@ -44,9 +46,12 @@ export const generationNode = async (
 
   -------------------------
 
+  CONVERSATION HISTORY
+  ${CONVO_HISTORY}
+
   RULES:
   - Prefer tool results when available.
-  - Do not hallucinate.
+  - Do not hallucinate, conversational history lookup keeps you in context
   - Keep response concise and professional.
   - Return ONLY valid JSON.
 
