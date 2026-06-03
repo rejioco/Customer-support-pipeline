@@ -1,3 +1,21 @@
+export type Metrics = {
+  totalLatencyMs?:number;
+
+  classificationLatencyMs?:number;
+  retrievalLatencyMs?:number;
+  retrievalValidationLatencyMs?:number;
+  toolDecisionLatencyMs?:number;
+  toolCallLatencyMs?:number;
+  generationLatencyMs?:number;
+
+  retrievalDocsCount?:number;
+  retrievalTopScore?:number;
+  toolInvoked?:boolean;
+  escalated?:boolean;
+}
+
+
+
 export type SupportState = {
   query: string;
   intent?: string;
@@ -17,4 +35,7 @@ export type SupportState = {
   retrievalConfidence?:number;
   reason?:string;
   messages?:{role:"user"|"assistant",content:string}[]
+  metrics?:Metrics
 };
+
+

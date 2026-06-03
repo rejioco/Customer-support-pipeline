@@ -36,22 +36,22 @@ export const toolCallNode = async (
       {
         role: "system",
         content: `You are a tool calling agent that calls the tool
-You have available tools like:
-- getOrderStatus(orderId) - Fetches real-time order tracking and delivery status. Required Input: orderId
-- getRefundStatus(refundId) - returns the status of refund
+        You have available tools like:
+        - getOrderStatus(orderId) - Fetches real-time order tracking and delivery status. Required Input: orderId
+        - getRefundStatus(refundId) - returns the status of refund
 
-- This is conversational history and its very importany for you to first have a look in this : ${CONVO_HISTORY}
-- Based on user query decide which tool to call from available tools and the tool Input that needs to be passed into the tool
+        - This is conversational history and its very importany for you to first have a look in this : ${CONVO_HISTORY}
+        - Based on user query decide which tool to call from available tools and the tool Input that needs to be passed into the tool
 
-- Do not any explanation
-- Do not return Markdown
-- Return only valid JSON output
+        - Do not any explanation
+        - Do not return Markdown
+        - Return only valid JSON output
 
-- Return the output is this format only:
-{
-  "toolName":"Name of the tool",
-  "toolInput":"Inputs to be passed into tool"
-}`,
+        - Return the output is this format only:
+      {
+        "toolName":"Name of the tool",
+        "toolInput":"Inputs to be passed into tool"
+      }`,
       },
       {
         role: "user",
