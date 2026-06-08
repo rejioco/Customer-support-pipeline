@@ -14,7 +14,11 @@ export type Metrics = {
   escalated?:boolean;
 }
 
-
+export type Observations = {
+  toolName:string;
+  input:string;
+  output:string;
+}
 
 export type SupportState = {
   query: string;
@@ -34,8 +38,21 @@ export type SupportState = {
   retrievalValid?:boolean;
   retrievalConfidence?:number;
   reason?:string;
-  messages?:{role:"user"|"assistant",content:string}[]
-  metrics?:Metrics
+  messages?:{role:"user"|"assistant",content:string}[];
+  metrics?:Metrics;
+  observations:Observations[];
 };
 
+
+
+export type CodingState = {
+  query:string;
+  toolNeeded?:boolean;
+  toolName?:string;
+  toolInput?:string;
+  reason?:string;
+  toolResponse?:string;
+  observations:Observations[]
+  messages?:{role:"user"|"assistant"|"tool",content:string}[];
+}
 

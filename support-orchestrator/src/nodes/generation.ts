@@ -1,6 +1,6 @@
 //This is my generation node => we make use of user query and retrieved documents to
 import { Ollama } from "ollama";
-import { SupportState } from "../state";
+import { SupportState } from "../state.js";
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
 
@@ -16,9 +16,9 @@ export const generationNode = async (
       })
       .join("\n") ?? "";
 
-  const TOOL_CONTEXT = state.toolResponse
-    ? JSON.stringify(state.toolResponse, null, 2)
-    : "No tool response available";
+  const TOOL_CONTEXT = state.observations && state.observations.length > 0
+    ? JSON.stringify(state.observations, null, 2)
+    : "No tool observations available";
 
   const SYSTEM_PROMPT = `
   You are an AI customer support assistant.

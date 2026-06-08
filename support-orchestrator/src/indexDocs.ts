@@ -1,9 +1,9 @@
 // - Documents
 // - The embedding function
 
-import { docs } from "./data/docs";
-import { qdrant } from "./qdrant";
-import { generateEmbedding } from "./embed";
+import { docs } from "./data/docs.js";
+import { qdrant } from "./qdrant.js";
+import { generateEmbedding } from "./embed.js";
 
 const indexDocs = async () => {
   for (const doc of docs) {

@@ -1,6 +1,6 @@
-import { SupportState } from "../state";
-import { generateEmbedding } from "../embed";
-import { qdrant } from "../qdrant";
+import { SupportState } from "../state.js";
+import { generateEmbedding } from "../embed.js";
+import { qdrant } from "../qdrant.js";
 
 export const retrievalNode = async (
   state: SupportState,

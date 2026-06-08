@@ -1,4 +1,4 @@
-import { qdrant } from "./qdrant";
+import { qdrant } from "./qdrant.js";
 
 const setup = async () => {
     await qdrant.createCollection("support-docs",

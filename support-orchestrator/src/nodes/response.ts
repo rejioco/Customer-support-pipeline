@@ -1,4 +1,4 @@
-import { SupportState } from "../state";
+import { SupportState } from "../state.js";
 
 export const responseNode = async (state:SupportState): Promise<SupportState>=> {
     console.log("\nRunning Response Node");

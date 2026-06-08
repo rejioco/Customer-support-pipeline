@@ -2,10 +2,10 @@
 // If this node validates the retrieval => tool decision node
 // If this node invalidates the retrieval => escalation node as there is no context to further generation
 
-import { SupportState } from "../state";
+import { SupportState } from "../state.js";
 import { Ollama } from "ollama";
 import { z } from "zod";
-import { escalationNode } from "./escalation";
+import { escalationNode } from "./escalation.js";
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
 
@@ -38,7 +38,7 @@ export const retrievalValidationNode = async (state: SupportState) => {
     console.log("\nRUNNING RETRIEVAL VALIDATOR NODE");
     const query = state.query;
     const retrievedDocs = state.retrievedDocs;
-    const relevantDocs = retrievedDocs?.filter((doc) => doc.score > 0.6);
+    const relevantDocs = retrievedDocs?.filter((doc) => doc.score > 0.4);
     const docsText = relevantDocs?.map((doc) => doc.content).join("\n\n") || "";
 
     if (relevantDocs?.length === 0) {

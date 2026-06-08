@@ -1,7 +1,7 @@
 import express from "express";
-import { runPipeline } from "./runPipeline";
-import { connectRedis } from "./config/redis";
-import { redisClient } from "./config/redis";
+import { runPipeline } from "./runPipeline.js";
+import { connectRedis } from "./config/redis.js";
+import { redisClient } from "./config/redis.js";
 
 const app = express();
 app.use(express.json());

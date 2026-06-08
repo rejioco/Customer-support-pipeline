@@ -41,8 +41,8 @@ graph TD
     
     ToolDecide --> Router3{Tool Needed?}
     Router3 -- Yes --> ToolCall[5. Tool Call Node]
-    ToolCall --> Generate[6. Generation Node]
-    Router3 -- No --> Generate
+    ToolCall --> ToolDecide
+    Router3 -- No --> Generate[6. Generation Node]
     
     Generate --> Response[7. Response Node]
     Response --> End([Final Response])
@@ -59,9 +59,9 @@ graph TD
 4. **Retrieval Validator Node** ([retrievalValidator.ts](file:///Users/ayush/Orchestrator/support-orchestrator/src/nodes/retrievalValidator.ts)):
    Validates if the retrieved documents actually contain sufficient information to address the query. If no relevant docs match (score > `0.6`), it bypasses LLM and routes straight to Escalation.
 5. **Tool Decision Node** ([toolDecide.ts](file:///Users/ayush/Orchestrator/support-orchestrator/src/nodes/toolDecide.ts)):
-   Determines if the request requires real-time operations (e.g., order tracking, refund status, live account details).
+   Determines if the request requires real-time operations (e.g. order tracking, details, refunds, customer info) and supports sequential tool-chaining (e.g., automatically resolving `orderId` via `getCustomerDetails` before calling `getOrderDetails`).
 6. **Tool Call Node** ([toolCall.ts](file:///Users/ayush/Orchestrator/support-orchestrator/src/nodes/toolCall.ts)):
-   Selects the correct tool (e.g., `getOrderStatus`, `getRefundStatus`) and extracts the required inputs (like `orderId`) from the query/history to execute the action.
+   Selects the correct tool (e.g., `getCustomerDetails`, `getOrderDetails`, `getOrderStatus`, `issueRefund`, `updateAddress`) and maps LLM-extracted arguments to execute backend queries.
 7. **Generation Node** ([generation.ts](file:///Users/ayush/Orchestrator/support-orchestrator/src/nodes/generation.ts)):
    Combines conversation history (from Redis), retrieved document context, and tool execution results to generate a concise, professional response.
 8. **Response Node** ([response.ts](file:///Users/ayush/Orchestrator/support-orchestrator/src/nodes/response.ts)):
@@ -139,33 +139,51 @@ Submits a query to the support orchestrator. Conversations are tracked and store
 }
 ```
 
-#### Example Response (Successful Tool Call)
+#### Example Response (Successful Tool-Chained Call)
 ```json
 {
-  "query": "Where is my order ORD123?",
+  "query": "Can you tell the details of my order? My Customer ID is CUST123",
   "currentNode": "response",
   "retryCount": 0,
   "messages": [],
-  "intent": "shipping",
+  "observations": [
+    {
+      "toolName": "getCustomerDetails",
+      "input": { "customerId": "CUST123" },
+      "output": {
+        "name": "Ayush Guleria",
+        "email": "ayush@gmail.com",
+        "orderId": "ORD456"
+      }
+    },
+    {
+      "toolName": "getOrderDetails",
+      "input": { "orderId": "ORD456" },
+      "output": {
+        "items": "mobile",
+        "quantity": 3,
+        "price": 10000
+      }
+    }
+  ],
+  "intent": "account",
   "sentiment": "neutral",
-  "confidence": 0.95,
+  "confidence": 0.85,
   "retrievedDocs": [
     {
-      "score": 0.82,
-      "content": "\nShipping & Delivery Policy\n\nOrders are processed within..."
+      "score": 0.56,
+      "content": "..."
     }
   ],
   "retrievalValid": true,
   "retrievalConfidence": 0.95,
-  "reason": "Retrieved documents contain shipping and delivery policy information.",
-  "toolNeeded": true,
-  "toolName": "getOrderStatus",
-  "toolInput": "ORD123",
+  "toolNeeded": false,
   "toolResponse": {
-    "status": "Out for delivery",
-    "eta": "Tomorrow"
+    "items": "mobile",
+    "quantity": 3,
+    "price": 10000
   },
-  "finalResponse": "Your order ORD123 is currently out for delivery and is expected to arrive tomorrow."
+  "finalResponse": "Based on our records, your customer name is Ayush Guleria. Your recent order details (Order ID: ORD456) include item 'mobile', quantity 3, with a total price of $10,000."
 }
 ```
 

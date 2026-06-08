@@ -1,4 +1,4 @@
-import { SupportState } from "./state";
+import { SupportState } from "./state.js";
 
 export const routerAfterEscalation = (state: SupportState): string => {
   if ((state.confidence || 0) < 0.5) {
@@ -9,11 +9,10 @@ export const routerAfterEscalation = (state: SupportState): string => {
   return "retrieval";
 };
 
+
 export const routerAfterRetrieval = (state:SupportState): string => {
-  if(state.toolNeeded){
-    //tool node 
-    return "tool"
+  if(!state.toolNeeded){
+    return "generation"
   }
-  // Direct generation node
-  return "generation"
+  return "tool"
 }

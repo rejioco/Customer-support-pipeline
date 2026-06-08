@@ -1,7 +1,7 @@
 import { Ollama } from "ollama";
-import { SupportState } from "../state";
+import { SupportState } from "../state.js";
 import { z } from "zod";
-import { escalationNode } from "./escalation";
+import { escalationNode } from "./escalation.js";
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
 
@@ -63,14 +63,16 @@ export const classificationNode = async (
       messages: [
         {
           role: "system",
-          content: state.retryCount>0
-            ? SYSTEM_PROMPT +
-              `\nPrevious output was invalid please return valid JSON follow this formaat: {
-    "intent":"billing",
-    "sentiment":"neutral",
-    "confidence":0.95
-}`
-            : SYSTEM_PROMPT,
+          content:
+            state.retryCount > 0
+              ? SYSTEM_PROMPT +
+                `\nPrevious output was invalid please return valid JSON follow this formaat: 
+                {
+                    "intent":"billing",
+                    "sentiment":"neutral",
+                    "confidence":0.95
+                }`
+              : SYSTEM_PROMPT,
         },
         {
           role: "user",

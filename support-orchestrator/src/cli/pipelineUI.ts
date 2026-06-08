@@ -8,3 +8,9 @@ export const pipeLineUI = {
   toolCall: ora("Tool Call"),
   generation: ora("Generation"),
 };
+
+export const codeLineUI = {
+  reasoning: ora("Reasoning"),
+  tool_call: ora("Calling tools"),
+  generation: ora("Generating"),
+};
