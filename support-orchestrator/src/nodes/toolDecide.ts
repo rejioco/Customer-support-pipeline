@@ -7,7 +7,6 @@ import { getOrderStatus } from "../tools/orderTools.js";
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
 
-
 function cleanJSON(raw: string) {
   const match = raw.match(/\{[\s\S]*\}/);
   if (match) {
@@ -22,7 +21,7 @@ function cleanJSON(raw: string) {
 const SYSTEM_PROMPT = `
 You are a Tool Decision Agent inside a customer support orchestration system.
 
-Your job is NOT to answer the user.
+Your job is NOT to answer the user. 
 
 Your only responsibility is deciding:
 
@@ -206,11 +205,12 @@ No explanations.
 No extra text.
 `;
 
-
-export const toolDecisonNode = async (state: SupportState): Promise<SupportState> => {
+export const toolDecisonNode = async (
+  state: SupportState,
+): Promise<SupportState> => {
   console.log("\nRUNNING DECISION NODE");
 
-  const TOOL_OBS = JSON.stringify(state.observations,null,2)
+  const TOOL_OBS = JSON.stringify(state.observations, null, 2);
 
   // It will also have access to observations made by the tool call/s done till now in the pipeline
   const query = state.query;
@@ -233,7 +233,7 @@ export const toolDecisonNode = async (state: SupportState): Promise<SupportState
 
         Previous Tool Observations:
         ${TOOL_OBS}
-        `
+        `,
       },
     ],
   });
@@ -242,24 +242,19 @@ export const toolDecisonNode = async (state: SupportState): Promise<SupportState
   const cleaned = cleanJSON(raw);
   const parsed = JSON.parse(cleaned);
 
-  if(parsed.toolcallNeeded){
+  if (parsed.toolcallNeeded) {
     state.toolNeeded = parsed.toolcallNeeded; // tool call needed is true
-    state.toolName = parsed.toolName; // name of the tool 
-    state.toolInput = parsed.toolInput  // tool input in the form of object
-  }
-
-  else{
+    state.toolName = parsed.toolName; // name of the tool
+    state.toolInput = parsed.toolInput; // tool input in the form of object
+  } else {
     // When tool call is not reqd we set the value to tool call needed to false
     state.toolNeeded = parsed.toolcallNeeded;
     state.toolName = undefined;
     state.toolInput = undefined;
   }
 
-
   return state;
 };
 
-
-
-// based on the user query it will decide to use user query => which tool to call and what all inputs need to be sent along 
+// based on the user query it will decide to use user query => which tool to call and what all inputs need to be sent along
 // that tool ofc

@@ -1,6 +1,6 @@
 # Support Orchestrator
 
-An intelligent customer support agent orchestration system built with Node.js, TypeScript, Express, Redis, Qdrant, and Ollama (running local LLMs). 
+An intelligent customer support agent orchestration system built with Node.js, TypeScript, Express, Redis, Qdrant, and Ollama (running local LLMs).
 
 The system routes, validates, retrieves, and processes user queries through a multi-node pipeline, deciding dynamically when to answer using local documentation (RAG), when to call operational APIs/tools, and when to escalate to human support.
 
@@ -26,31 +26,31 @@ The orchestration engine processes every incoming query through a structured seq
 graph TD
     Start([User Query]) --> Classify[1. Classification Node]
     Classify --> Router1{Confidence >= 0.5?}
-    
+
     %% Escalation Flow
     Router1 -- No / Failures --> Escalate[Escalation Node]
     Escalate --> Human([Human Support / Agent Ticket])
-    
+
     %% RAG Flow
     Router1 -- Yes --> Retrieve[2. Retrieval Node]
     Retrieve --> Validate[3. Retrieval Validator Node]
     Validate --> Router2{Valid Context?}
-    
+
     Router2 -- No --> Escalate
     Router2 -- Yes --> ToolDecide[4. Tool Decision Node]
-    
+
     ToolDecide --> Router3{Tool Needed?}
     Router3 -- Yes --> ToolCall[5. Tool Call Node]
     ToolCall --> ToolDecide
     Router3 -- No --> Generate[6. Generation Node]
-    
+
     Generate --> Response[7. Response Node]
     Response --> End([Final Response])
 ```
 
 ### Node Descriptions
 
-1. **Classification Node** ([classifier.ts](file:///Users/ayush/Orchestrator/support-orchestrator/src/nodes/classifier.ts)): 
+1. **Classification Node** ([classifier.ts](file:///Users/ayush/Orchestrator/support-orchestrator/src/nodes/classifier.ts)):
    Uses `llama3.1` to classify the query's intent (e.g., `billing`, `shipping`, `after_sales`, `technical`, `account`, `miscellaneous`), sentiment (e.g., `positive`, `neutral`, `negative`), and computes a confidence score. If LLM output fails schema validation, it retries up to 2 times before auto-escalating.
 2. **Router** ([router.ts](file:///Users/ayush/Orchestrator/support-orchestrator/src/router.ts)):
    Determines the next step. If confidence is below `0.5`, it routes to the Escalation Node. Otherwise, it routes to Retrieval.
@@ -98,25 +98,33 @@ Ensure you have the following running on your local machine:
 ## 🚀 Getting Started
 
 ### 1. Install Dependencies
+
 Navigate to the project folder and install dependencies:
+
 ```bash
 npm install
 ```
 
 ### 2. Set Up Qdrant Collection
+
 Create the required `support-docs` vector collection (configured for 768-dimensional cosine similarity vectors):
+
 ```bash
 npx tsx src/setupQdrant.ts
 ```
 
 ### 3. Index Knowledge Base Documents
+
 Index the local markdown-based company policies ([docs.ts](file:///Users/ayush/Orchestrator/support-orchestrator/src/data/docs.ts)) into Qdrant:
+
 ```bash
 npx tsx src/indexDocs.ts
 ```
 
 ### 4. Start the Server
+
 Run the Express API server (runs on port `6969`):
+
 ```bash
 npx tsx src/server.ts
 ```
@@ -126,12 +134,15 @@ npx tsx src/server.ts
 ## 📡 API Endpoints
 
 ### `POST /query`
+
 Submits a query to the support orchestrator. Conversations are tracked and stored in Redis using the `sessionId`.
 
 #### Request Headers
+
 `Content-Type: application/json`
 
 #### Request Body
+
 ```json
 {
   "query": "Where is my order ORD123?",
@@ -140,6 +151,7 @@ Submits a query to the support orchestrator. Conversations are tracked and store
 ```
 
 #### Example Response (Successful Tool-Chained Call)
+
 ```json
 {
   "query": "Can you tell the details of my order? My Customer ID is CUST123",
@@ -188,6 +200,7 @@ Submits a query to the support orchestrator. Conversations are tracked and store
 ```
 
 #### Example Response (Escalated Query)
+
 ```json
 {
   "query": "Can I get a discount because the moon is blue?",

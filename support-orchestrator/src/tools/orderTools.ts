@@ -7,7 +7,7 @@ export const getOrderStatus = async (toolInput:any) => {
         },
         "ORD456":{
             status:"Delivered",
-            eta:"Delivered Yeasterday"
+            eta:"Delivered yesterday"
         },
         "ORD789":{
             status:"Order packed",

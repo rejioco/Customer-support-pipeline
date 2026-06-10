@@ -49,7 +49,9 @@ Return ONLY valid JSON in this format:
 No explanation. No markdown. No text outside the JSON object.
 `;
 
-export const codeToolCallNode = async (state: CodingState): Promise<CodingState> => {
+export const codeToolCallNode = async (
+  state: CodingState,
+): Promise<CodingState> => {
   // Tool is already decided by reasoningNode — never override it
   const toolName = state.toolName as ToolName;
 
@@ -99,7 +101,7 @@ export const codeToolCallNode = async (state: CodingState): Promise<CodingState>
     output: JSON.stringify(toolResponse),
   });
 
-  console.log(state)
+  console.log(state);
 
   return state;
 };

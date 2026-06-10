@@ -49,9 +49,13 @@ If observations are sufficient:
 }
 `;
 
-export const reasoningNode = async (state: CodingState): Promise<CodingState> => {
-
-  const OBS_CONTEXT = (state.observations.length === 0)?"No observations available as of now":JSON.stringify(state.observations, null, 2)
+export const reasoningNode = async (
+  state: CodingState,
+): Promise<CodingState> => {
+  const OBS_CONTEXT =
+    state.observations.length === 0
+      ? "No observations available as of now"
+      : JSON.stringify(state.observations, null, 2);
 
   try {
     const response = await ollama.chat({
@@ -74,14 +78,13 @@ export const reasoningNode = async (state: CodingState): Promise<CodingState> =>
     const raw = response.message.content;
     const parsed = JSON.parse(raw);
 
-    console.log(state)
+    console.log(state);
     return {
       ...state,
       toolNeeded: parsed.toolNeeded,
       toolName: parsed.toolName,
-      reason: parsed.reason
+      reason: parsed.reason,
     };
-
   } catch (err) {
     console.error(err);
     throw err;

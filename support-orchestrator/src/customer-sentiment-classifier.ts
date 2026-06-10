@@ -131,7 +131,7 @@ const main = async () => {
     const validated = ClassificationSchema.parse(parsed);
 
     // MAKE USE OF THE VALIDATED OUTPUT TO CALL THE SPECIFIC AGENT => DEPENDS ON INTENT
-    const res = await router(validated.intent,USER_QUERY);
+    const res = await router(validated.intent, USER_QUERY);
     console.log(res);
     // console.log(validated);
   } catch (err) {

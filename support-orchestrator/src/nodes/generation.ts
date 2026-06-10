@@ -16,9 +16,10 @@ export const generationNode = async (
       })
       .join("\n") ?? "";
 
-  const TOOL_CONTEXT = state.observations && state.observations.length > 0
-    ? JSON.stringify(state.observations, null, 2)
-    : "No tool observations available";
+  const TOOL_CONTEXT =
+    state.observations && state.observations.length > 0
+      ? JSON.stringify(state.observations, null, 2)
+      : "No tool observations available";
 
   const SYSTEM_PROMPT = `
   You are an AI customer support assistant.

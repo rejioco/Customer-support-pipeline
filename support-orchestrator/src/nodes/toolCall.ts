@@ -10,13 +10,12 @@ import {
   updateAddress,
 } from "../tools/orderTools.js";
 
-
 const TOOL_MAP = {
   getOrderStatus: getOrderStatus,
   issueRefund: issueRefund,
   updateAddress: updateAddress,
-  getOrderDetails:getOrderDetails,
-  getCustomerDetails:getCustomerDetails
+  getOrderDetails: getOrderDetails,
+  getCustomerDetails: getCustomerDetails,
 };
 
 type ToolName = keyof typeof TOOL_MAP;
@@ -30,25 +29,14 @@ export const toolCallNode = async (state: SupportState) => {
   console.log("\nRUNNING TOOL EXECUTION NODE");
   const toolName = state.toolName as ToolName;
   const toolInput = state.toolInput;
-  const toolResponse = await TOOL_MAP[toolName](toolInput)
+  const toolResponse = await TOOL_MAP[toolName](toolInput);
   state.observations.push({
-    toolName:toolName,
-    input:toolInput!,
-    output:toolResponse
-  })
+    toolName: toolName,
+    input: toolInput!,
+    output: toolResponse,
+  });
   return { ...state, toolResponse };
 };
-
-
-
-
-
-
-
-
-
-
-
 
 // // This node that will actually call the tool
 // import { SupportState } from "../state.js";
