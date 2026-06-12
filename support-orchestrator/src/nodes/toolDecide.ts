@@ -132,11 +132,11 @@ These observations represent information already known.
 
 IMPORTANT:
 
-- Do NOT call a tool if its information already exists inside observations (i.e. check both toolName and input parameters).
-- Use observations to determine whether another tool is needed.
+- Do NOT call a tool if the information already exists in observations, retrieved context, or conversation history.
+- Use observations, retrieved context, and conversation history to determine whether another tool is needed.
 - Avoid repeating the same tool call.
-- If observations contain enough information to answer the user, stop.
-- If a tool provided an ID (like orderId) that is needed by another tool to fulfill the user's request, YOU MUST CALL THAT NEXT TOOL (unless that next tool's result is already present in the observations). Do not stop just because you found the ID.
+- If you have enough information to answer the ENTIRE user query across all these sources, stop.
+- If a tool provided an ID (like orderId) that is needed by another tool to fulfill the user's request, YOU MUST CALL THAT NEXT TOOL (unless that next tool's result is already present). Do not stop just because you found the ID.
 
 ==================================================
 WHEN TO CALL TOOLS
@@ -163,9 +163,9 @@ Return:
 
 when:
 
-- The exact information requested by the user has been fully retrieved. (e.g. if the user asks for "order details", you must have retrieved the actual order details like items, quantity, price, NOT just an orderId).
+- The exact information requested by the user has been fully retrieved across observations, retrieved context, and conversation history. (e.g. if the user asks for "order details", you must have retrieved the actual order details like items, quantity, price, NOT just an orderId).
 - the requested action has already been completed
-- observations are sufficient for final response generation
+- all available context is sufficient for final response generation
 
 ==================================================
 PARAMETER EXTRACTION & TOOL CHAINING
@@ -211,6 +211,8 @@ export const toolDecisonNode = async (
   console.log("\nRUNNING DECISION NODE");
 
   const TOOL_OBS = JSON.stringify(state.observations, null, 2);
+  const retrievedDocsText = state.retrievedDocs?.filter(doc => doc.score > 0.4).map(d => d.content).join("\n\n") || "No retrieved documents";
+  const convoDocsText = state.conversationMemory?.filter(doc => doc.score > 0.5).map(d => `User: ${d.query} Assistant: ${d.response}`).join("\n\n") || "No relevant conversation history";
 
   // It will also have access to observations made by the tool call/s done till now in the pipeline
   const query = state.query;
@@ -230,6 +232,12 @@ export const toolDecisonNode = async (
 
         Intent:
         ${intent}
+
+        Retrieved Context:
+        ${retrievedDocsText}
+
+        Conversation History:
+        ${convoDocsText}
 
         Previous Tool Observations:
         ${TOOL_OBS}

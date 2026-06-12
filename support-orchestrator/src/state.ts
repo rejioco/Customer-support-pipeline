@@ -20,14 +20,24 @@ export type Observations = {
   output:string;
 }
 
+export type ConversationMemoryEntry = {
+  score: number;
+  query: string;
+  response: string;
+  sessionId: string;
+};
+
 export type SupportState = {
   query: string;
+  sessionId?: string;
   intent?: string;
   sentiment?: string;
   confidence?: number;
   retrievedDocs?: { score: number; content: unknown; }[];
+  conversationMemory?: ConversationMemoryEntry[];
   currentNode?: string;
   finalResponse?:string;
+  toolCallNeededAfterRetrieval?:boolean;
   escalationNeeded?: boolean;
   toolNeeded?:boolean;
   toolName?:string;

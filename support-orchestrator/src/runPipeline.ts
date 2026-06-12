@@ -13,10 +13,12 @@ import { pipeLineUI } from "./cli/pipelineUI.js";
 export const runPipeline = async (
   query: string,
   messages: any[],
+  sessionId?: string,
 ): Promise<SupportState> => {
   const pipelineStartTime = Date.now();
   let state: SupportState = {
     query: query,
+    sessionId: sessionId,
     currentNode: "start",
     retryCount: 0,
     messages,
@@ -75,43 +77,47 @@ export const runPipeline = async (
       `Retrieval Validation (${state.metrics?.retrievalValidationLatencyMs}) ms`,
     );
 
-    if (!state.retrievalValid) {
+    if (!state.retrievalValid && !state.toolCallNeededAfterRetrieval) {
       return await escalationNode(state);
     }
 
-    // ----------------------------------------------------------------
+    // If we have suffiecient retrieval data based on Support Docs and conversation memory => We either go with normal
+    // flow towards toolDecison Node or directly to generation node
 
-    let i = 0;
+    if (state.toolCallNeededAfterRetrieval) {
+      let i = 0;
 
-    while (i < 5) {
-      const toolDecisionStart = Date.now();
+      while (i < 5) {
+        const toolDecisionStart = Date.now();
 
-      state = await toolDecisonNode(state);
+        state = await toolDecisonNode(state);
 
-      state.metrics = {
-        ...state.metrics,
-        toolDecisionLatencyMs:
-          (state.metrics?.toolDecisionLatencyMs || 0) +
-          (Date.now() - toolDecisionStart),
-      };
+        state.metrics = {
+          ...state.metrics,
+          toolDecisionLatencyMs:
+            (state.metrics?.toolDecisionLatencyMs || 0) +
+            (Date.now() - toolDecisionStart),
+        };
 
-      if (!state.toolNeeded) {
-        break;
+        if (!state.toolNeeded) {
+          break;
+        }
+
+        const toolCallStart = Date.now();
+
+        state = await toolCallNode(state);
+
+        state.metrics = {
+          ...state.metrics,
+          toolCallLatencyMs:
+            (state.metrics?.toolCallLatencyMs || 0) +
+            (Date.now() - toolCallStart),
+        };
+
+        i++;
       }
-
-      const toolCallStart = Date.now();
-
-      state = await toolCallNode(state);
-
-      state.metrics = {
-        ...state.metrics,
-        toolCallLatencyMs:
-          (state.metrics?.toolCallLatencyMs || 0) +
-          (Date.now() - toolCallStart),
-      };
-
-      i++;
     }
+    // ----------------------------------------------------------------
 
     // ----------------------------------------------------------------
 
