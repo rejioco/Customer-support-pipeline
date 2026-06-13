@@ -1,9 +1,11 @@
-import { Ollama } from "ollama";
+import {generateText} from "ai"
+import {google} from "@ai-sdk/google"
+ 
 import { SupportState } from "../state.js";
 import { z } from "zod";
 import { escalationNode } from "./escalation.js";
+import { groq } from "@ai-sdk/groq";
 
-const ollama = new Ollama({ host: "http://localhost:11434" });
 
 const ResposeSchema = z.object({
   intent: z.string(),
@@ -45,7 +47,7 @@ Confidence calculation rules:
 Required JSON format: 
 {
     "intent":"billing",
-    "sentiment":"negative"
+    "sentiment":"negative",
     "confidence":0.95
 }
 Do not any explanation
@@ -57,48 +59,46 @@ export const classificationNode = async (
   state: SupportState,
 ): Promise<SupportState> => {
   console.log(`\nRUNNING CLASSIFICATION NODE (Retry: ${state.retryCount})`);
-  try {
-    const response = await ollama.chat({
-      model: "llama3.1:latest",
-      messages: [
-        {
-          role: "system",
-          content:
-            state.retryCount > 0
-              ? SYSTEM_PROMPT +
-                `\nPrevious output was invalid please return valid JSON follow this formaat: 
-                {
-                    "intent":"billing",
-                    "sentiment":"neutral",
-                    "confidence":0.95
-                }`
-              : SYSTEM_PROMPT,
-        },
-        {
-          role: "user",
-          content: state.query,
-        },
-      ],
-    });
-    const raw = response.message.content;
-    const parsed = JSON.parse(raw);
-    const validateParsed = ResposeSchema.parse(parsed);
-
-    return {
-      ...state,
-      intent: validateParsed.intent,
-      sentiment: validateParsed.sentiment,
-      confidence: validateParsed.confidence,
-      currentNode: "Classification",
-    };
-  } catch (err) {
-    console.log("\nCLASSIFICATION NODE FAILED");
-
-    const updatedState = {
-      ...state,
-      retryCount: (state.retryCount || 0) + 1,
-      lastFailure: "CLASSIFICATION_VALIDATION_FAILED",
-    };
+    let raw = "";
+    try {
+      const response = await generateText({
+        model: groq("llama-3.3-70b-versatile"),
+        system:state.retryCount > 0
+                ? SYSTEM_PROMPT +
+                  `\nPrevious output was invalid please return valid JSON follow this formaat: 
+                  {
+                      "intent":"billing",
+                      "sentiment":"neutral",
+                      "confidence":0.95
+                  }`
+                : SYSTEM_PROMPT,
+        messages: [
+  
+          {
+            role: "user",
+            content: state.query,
+          },
+        ],
+      });
+      raw = response.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(raw);
+      const validateParsed = ResposeSchema.parse(parsed);
+  
+      return {
+        ...state,
+        intent: validateParsed.intent,
+        sentiment: validateParsed.sentiment,
+        confidence: validateParsed.confidence,
+        currentNode: "Classification",
+      };
+    } catch (err) {
+      console.log("\nCLASSIFICATION NODE FAILED", err, "RAW:", raw);
+  
+      const updatedState = {
+        ...state,
+        retryCount: (state.retryCount || 0) + 1,
+        lastFailure: "CLASSIFICATION_VALIDATION_FAILED",
+      };
 
     if (updatedState.retryCount >= 2) {
       console.log("MAX RETRIES REACHED → ESCALATING");

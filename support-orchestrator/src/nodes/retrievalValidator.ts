@@ -2,12 +2,13 @@
 // If this node validates the retrieval => tool decision node
 // If this node invalidates the retrieval => escalation node as there is no context to further generation
 
+import {generateText} from "ai"
+import {google} from "@ai-sdk/google"
 import { SupportState } from "../state.js";
-import { Ollama } from "ollama";
 import { z } from "zod";
 import { escalationNode } from "./escalation.js";
+import { groq } from "@ai-sdk/groq";
 
-const ollama = new Ollama({ host: "http://localhost:11434" });
 
 const ResposeSchema = z.object({
   retrievalValid: z.boolean(),
@@ -25,6 +26,9 @@ Evaluate:
 - relevance
 - usefulness
 - topical match
+
+- Set "retrievalValid": true if EITHER the retrieved documents OR the conversation history contain sufficient information to answer the user's query.
+- Set "retrievalValid": false ONLY if NEITHER the retrieved documents NOR the conversation history contain the required information.
 
 - If the retrieved documents OR the conversation history contain all the necessary information to fully answer the query without any external tools, then:
   "toolCallNeededAfterRetrieval": false
@@ -60,20 +64,17 @@ export const retrievalValidationNode = async (state: SupportState) => {
       };
     }
 
-    const response = await ollama.chat({
-      model: "llama3.1:latest",
+    const response = await generateText({
+      model: groq("llama-3.3-70b-versatile"),
+      system:SYSTEM_PROMPT,
       messages: [
-        {
-          role: "system",
-          content: SYSTEM_PROMPT,
-        },
         {
           role: "user",
           content: `USER QUERY:${query} RETRIEVED DOCS: ${docsText} CONVERSATION HISTORY: ${convoHistory} `,
         },
       ],
     });
-    const raw = response.message.content;
+    const raw = response.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsed = JSON.parse(raw);
     const validParsed = ResposeSchema.parse(parsed);
 
@@ -85,7 +86,7 @@ export const retrievalValidationNode = async (state: SupportState) => {
       toolCallNeededAfterRetrieval: validParsed.toolCallNeededAfterRetrieval
     };
   } catch (err) {
-    console.log("\nRETRIEVAL NODE FAILED LACK OF RELEVENT DOCS -> ESCALATING");
+    console.log("\nRETRIEVAL NODE FAILED LACK OF RELEVENT DOCS -> ESCALATING", err);
     const updatedState = {
       ...state,
       lastFailure: "NO_RELEVANT_FAILED",

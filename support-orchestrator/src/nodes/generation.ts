@@ -1,8 +1,7 @@
 //This is my generation node => we make use of user query and retrieved documents to
-import { Ollama } from "ollama";
 import { SupportState } from "../state.js";
-
-const ollama = new Ollama({ host: "http://localhost:11434" });
+import { groq } from "@ai-sdk/groq";
+import { generateText } from "ai";
 
 export const generationNode = async (
   state: SupportState,
@@ -77,8 +76,8 @@ export const generationNode = async (
   }
   `;
 
-  const response = await ollama.chat({
-    model: "llama3.1:latest",
+  const response = await generateText({
+    model: groq("llama-3.3-70b-versatile"),
     messages: [
       {
         role: "system",
@@ -92,11 +91,11 @@ export const generationNode = async (
     ],
   });
 
-  const raw = response.message.content;
+  const raw = response.text;
   const parsed = JSON.parse(raw);
 
   state.finalResponse = parsed.reply;
   state.currentNode = "generation";
 
   return state;
-};
+}

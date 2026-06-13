@@ -1,11 +1,13 @@
 // This node will decide to do a tool call or not
+
+import {generateText} from "ai"
+import { groq } from "@ai-sdk/groq";
 import { SupportState } from "../state.js";
-import { Ollama } from "ollama";
 
 // Importing tools
 import { getOrderStatus } from "../tools/orderTools.js";
 
-const ollama = new Ollama({ host: "http://localhost:11434" });
+
 
 function cleanJSON(raw: string) {
   const match = raw.match(/\{[\s\S]*\}/);
@@ -217,13 +219,10 @@ export const toolDecisonNode = async (
   // It will also have access to observations made by the tool call/s done till now in the pipeline
   const query = state.query;
   const intent = state.intent;
-  const response = await ollama.chat({
-    model: "llama3.1:latest",
+  const response = await generateText({
+    model: groq("llama-3.3-70b-versatile"),
+    system:SYSTEM_PROMPT,
     messages: [
-      {
-        role: "system",
-        content: SYSTEM_PROMPT,
-      },
       {
         role: "user",
         content: `
@@ -245,10 +244,9 @@ export const toolDecisonNode = async (
       },
     ],
   });
-  const raw = response.message.content;
+  const raw = response.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
   console.log("LLM RAW DECISION:", raw);
-  const cleaned = cleanJSON(raw);
-  const parsed = JSON.parse(cleaned);
+  const parsed = JSON.parse(raw);
 
   if (parsed.toolcallNeeded) {
     state.toolNeeded = parsed.toolcallNeeded; // tool call needed is true
