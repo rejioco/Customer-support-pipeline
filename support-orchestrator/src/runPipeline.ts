@@ -14,70 +14,82 @@ export const runPipeline = async (
   query: string,
   messages: any[],
   sessionId?: string,
+  initialState?: SupportState,
 ): Promise<SupportState> => {
   const pipelineStartTime = Date.now();
-  let state: SupportState = {
-    query: query,
-    sessionId: sessionId,
-    currentNode: "start",
-    retryCount: 0,
-    messages,
-    observations: [],
-  };
-  // console.log("\nINITIAL STATE");
-  // console.log(state);
+  let state: SupportState;
+  
+  if (initialState) {
+    state = initialState;
+  } else {
+    state = {
+      query: query,
+      sessionId: sessionId,
+      currentNode: "start",
+      retryCount: 0,
+      messages,
+      observations: [],
+    };
+  }
 
   // CLASSIFICATION NODE IN ACTION
-  pipeLineUI.classification.start();
-  const classificationStartTime = Date.now();
-  state = await classificationNode(state);
-  state = {
-    ...state,
-    metrics: {
-      ...state.metrics,
-      classificationLatencyMs: Date.now() - classificationStartTime,
-    },
-  };
-  pipeLineUI.classification.succeed(
-    `Classification (${state.metrics?.classificationLatencyMs}) ms`,
-  );
+  if (!state.intent) {
+    pipeLineUI.classification.start();
+    const classificationStartTime = Date.now();
+    state = await classificationNode(state);
+    state = {
+      ...state,
+      metrics: {
+        ...state.metrics,
+        classificationLatencyMs: Date.now() - classificationStartTime,
+      },
+    };
+    pipeLineUI.classification.succeed(
+      `Classification (${state.metrics?.classificationLatencyMs}) ms`,
+    );
+  }
 
   // We will be running nodes decision based :) => Based on confidence computed at classification node
   const nextStep = routerAfterEscalation(state);
   // console.log(nextStep);
 
   if (nextStep === "retrieval") {
-    // RETRIEVAL NODE IN ACTION
-    pipeLineUI.retrieval.start();
-    const retrievalStartTime = Date.now();
-    state = await retrievalNode(state);
-    state = {
-      ...state,
-      metrics: {
-        ...state.metrics,
-        retrievalLatencyMs: Date.now() - retrievalStartTime,
-      },
-    };
-    pipeLineUI.retrieval.succeed(
-      `Retrieval (${state.metrics?.retrievalLatencyMs}) ms`,
-    );
+    if (!state.retrievedDocs || state.retrievedDocs.length === 0) {
+      // RETRIEVAL NODE IN ACTION
+      pipeLineUI.retrieval.start();
+      const retrievalStartTime = Date.now();
+      state = await retrievalNode(state);
+      state = {
+        ...state,
+        metrics: {
+          ...state.metrics,
+          retrievalLatencyMs: Date.now() - retrievalStartTime,
+        },
+      };
+      pipeLineUI.retrieval.succeed(
+        `Retrieval (${state.metrics?.retrievalLatencyMs}) ms`,
+      );
 
-    // RETRIEVAL VALIDATION NODE IN ACTION
-    pipeLineUI.validation.start();
-    const retrievalValidationStartTime = Date.now();
-    state = await retrievalValidationNode(state);
-    state = {
-      ...state,
-      metrics: {
-        ...state.metrics,
-        retrievalValidationLatencyMs: Date.now() - retrievalValidationStartTime,
-      },
-    };
-    pipeLineUI.validation.succeed(
-      `Retrieval Validation (${state.metrics?.retrievalValidationLatencyMs}) ms`,
-    );
+      // RETRIEVAL VALIDATION NODE IN ACTION
+      pipeLineUI.validation.start();
+      const retrievalValidationStartTime = Date.now();
+      state = await retrievalValidationNode(state);
+      state = {
+        ...state,
+        metrics: {
+          ...state.metrics,
+          retrievalValidationLatencyMs: Date.now() - retrievalValidationStartTime,
+        },
+      };
+      pipeLineUI.validation.succeed(
+        `Retrieval Validation (${state.metrics?.retrievalValidationLatencyMs}) ms`,
+      );
+    }
 
-    if (!state.retrievalValid && !state.toolCallNeededAfterRetrieval) {
+    // Atleast one doc makes the condition valid
+    const hasRelevantMemory = state.conversationMemory?.some((doc) => doc.score > 0.5) ?? false;
+
+    if (!state.retrievalValid && !state.toolCallNeededAfterRetrieval && !hasRelevantMemory) {
       return await escalationNode(state);
     }
 
@@ -87,10 +99,27 @@ export const runPipeline = async (
     if (state.toolCallNeededAfterRetrieval) {
       let i = 0;
 
+      // If we are resuming from approved HITL state, execute the pending tool call first
+      if (state.humanApprovalApproved) {
+        const toolCallStart = Date.now();
+        state = await toolCallNode(state);
+        state.metrics = {
+          ...state.metrics,
+          toolCallLatencyMs:
+            (state.metrics?.toolCallLatencyMs || 0) +
+            (Date.now() - toolCallStart),
+        };
+
+        if (state.humanApproval) {
+          return state;
+        }
+      }
+
       while (i < 5) {
         const toolDecisionStart = Date.now();
 
         state = await toolDecisonNode(state);
+        
 
         state.metrics = {
           ...state.metrics,
@@ -113,6 +142,10 @@ export const runPipeline = async (
             (state.metrics?.toolCallLatencyMs || 0) +
             (Date.now() - toolCallStart),
         };
+
+        if (state.humanApproval) {
+          return state;
+        }
 
         i++;
       }

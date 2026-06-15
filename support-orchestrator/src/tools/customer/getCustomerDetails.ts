@@ -3,7 +3,7 @@ import { ToolDefination } from "../types.js";
 export const getCustomerDetailsTool: ToolDefination = {
   name: "getCustomerDetails",
   desciption: "Gets me the details about the customer based on customerId",
-  humanApprovalReqd: false,
+  humanApprovalReqd:false,
   async execute(input) {
     // Logic to get Details of the customer
     const fakeDB: Record<string, any> = {

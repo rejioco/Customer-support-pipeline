@@ -1,35 +1,43 @@
 // This node that will actually call the tool
 import { SupportState } from "../state.js";
+import { v4 as uuidv4 } from "uuid";
+import { toolRegistry } from "../tools/registry.js";
+import { redisClient } from "../config/redis.js";
 
-// Importing tools
-import {
-  getCustomerDetails,
-  getOrderDetails,
-  getOrderStatus,
-  issueRefund,
-  updateAddress,
-} from "../tools/orderTools.js";
-
-const TOOL_MAP = {
-  getOrderStatus: getOrderStatus,
-  issueRefund: issueRefund,
-  updateAddress: updateAddress,
-  getOrderDetails: getOrderDetails,
-  getCustomerDetails: getCustomerDetails,
-};
-
-type ToolName = keyof typeof TOOL_MAP;
-
-type ToolDecision = {
-  toolName: ToolName;
-  toolInput: string;
-};
 
 export const toolCallNode = async (state: SupportState) => {
   console.log("\nRUNNING TOOL EXECUTION NODE");
-  const toolName = state.toolName as ToolName;
+  const toolName = state.toolName as keyof typeof toolRegistry;
   const toolInput = state.toolInput;
-  const toolResponse = await TOOL_MAP[toolName](toolInput);
+  if (!toolName || !toolRegistry[toolName]) {
+    console.error(`Error: Tool "${toolName}" is not registered in toolRegistry.`);
+    state.observations.push({
+      toolName: toolName || "unknown",
+      input: JSON.stringify(toolInput),
+      output: `Error: Tool "${toolName}" is not registered/available.`,
+    });
+    return state;
+  }
+  if(toolRegistry[toolName].humanApprovalReqd && !state.humanApprovalApproved){
+    state.humanApproval=true;
+    state.toolNameHumanApproval = toolName;
+    state.toolInputHumanApproval = toolInput;
+
+    // Save this entire workflow inside redis
+    const workflowId = uuidv4();
+    state.workflowId = workflowId;
+    console.log(workflowId);
+    await redisClient.set(`workflow:${workflowId}`, JSON.stringify(state));
+    // What does saving workflow mean => It means saving the state inside redis
+    // We fetch that state 
+    // If humanApproval:true => runPipeline(state)
+    // If humanApproval:false => Go to escalation node
+    console.log("\nWaiting for human approval.......");
+    return state
+  }
+  state.humanApproval = false;
+  state.humanApprovalApproved = false;
+  const toolResponse = await toolRegistry[toolName].execute(toolInput);
   state.observations.push({
     toolName: toolName,
     input: toolInput!,
@@ -37,73 +45,3 @@ export const toolCallNode = async (state: SupportState) => {
   });
   return { ...state, toolResponse };
 };
-
-// // This node that will actually call the tool
-// import { SupportState } from "../state.js";
-// import { Ollama } from "ollama";
-
-// // Importing tools
-// import { getOrderStatus, getRefundStatus } from "../tools/orderTools.js";
-
-// const ollama = new Ollama({ host: "http://localhost:11434" });
-
-// const SYSTEM_PROMPT = `
-
-// `;
-
-// const TOOL_MAP = {
-//   getOrderStatus: getOrderStatus,
-//   getRefundStatus: getRefundStatus,
-// };
-
-// type ToolName = keyof typeof TOOL_MAP;
-
-// type ToolDecision = {
-//   toolName: ToolName;
-//   toolInput: string;
-// };
-
-// export const toolCallNode = async (
-//   state: SupportState,
-// ): Promise<SupportState> => {
-//   console.log("\nRUNNING TOOL EXECUTION NODE");
-//   const query = state.query;
-//   const intent = state.intent;
-//   const CONVO_HISTORY = JSON.stringify(state.messages);
-//   const response = await ollama.chat({
-//     model: "llama3.1:latest",
-//     messages: [
-//       {
-//         role: "system",
-//         content: `You are a tool calling agent that calls the tool
-//         You have available tools like:
-//         - getOrderStatus(orderId) - Fetches real-time order tracking and delivery status. Required Input: orderId
-//         - getRefundStatus(refundId) - returns the status of refund
-
-//         - This is conversational history and its very importany for you to first have a look in this : ${CONVO_HISTORY}
-//         - Based on user query decide which tool to call from available tools and the tool Input that needs to be passed into the tool
-
-//         - Do not any explanation
-//         - Do not return Markdown
-//         - Return only valid JSON output
-
-//         - Return the output is this format only:
-//       {
-//         "toolName":"Name of the tool",
-//         "toolInput":"Inputs to be passed into tool"
-//       }`,
-//       },
-//       {
-//         role: "user",
-//         content: state.query,
-//       },
-//     ],
-//   });
-//   const raw = response.message.content;
-//   const parsed: ToolDecision = JSON.parse(raw);
-//   const toolName = parsed.toolName;
-//   const toolInput = parsed.toolInput;
-//   const toolResponse = await TOOL_MAP[toolName](toolInput);
-
-//   return { ...state, toolName, toolInput, toolResponse };
-// };
