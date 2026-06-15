@@ -8,7 +8,7 @@ export const initiateRefundTool : ToolDefination = {
     async execute(input) {
         const {orderId} = input;
         // Refund logic
-
+        return `Your refund has been initiated for the orderId ${orderId}`
         
     },
 }

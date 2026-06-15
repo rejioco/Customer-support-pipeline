@@ -38,6 +38,11 @@ export type SupportState = {
   currentNode?: string;
   finalResponse?:string;
   toolCallNeededAfterRetrieval?:boolean;
+  humanApproval?:boolean;
+  humanApprovalApproved?:boolean;
+  workflowId?:string;
+  toolNameHumanApproval?:string;
+  toolInputHumanApproval?:string;
   escalationNeeded?: boolean;
   toolNeeded?:boolean;
   toolName?:string;

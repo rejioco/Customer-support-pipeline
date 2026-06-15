@@ -78,11 +78,8 @@ export const generationNode = async (
 
   const response = await generateText({
     model: groq("llama-3.3-70b-versatile"),
+    system: SYSTEM_PROMPT,
     messages: [
-      {
-        role: "system",
-        content: SYSTEM_PROMPT,
-      },
       ...(state.messages ?? []),
       {
         role: "user",
@@ -91,8 +88,13 @@ export const generationNode = async (
     ],
   });
 
-  const raw = response.text;
-  const parsed = JSON.parse(raw);
+  const raw = response.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = { reply: raw };
+  }
 
   state.finalResponse = parsed.reply;
   state.currentNode = "generation";
